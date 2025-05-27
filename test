@@ -1,0 +1,69 @@
+function getUsername()
+    local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
+    if not input then
+        gg.alert("Bạn đã hủy đăng nhập!")
+        os.exit()
+    end
+    return input[1]
+end
+
+-- Hàm tải file JSON danh sách usernames từ GitHub (link raw)
+function getUserList()
+    local url = "https://raw.githubusercontent.com/annguyen934/an/main/keys.json"
+    local response = gg.makeRequest(url)
+    if response.status == 200 then
+        local content = response.content
+        local ok, json = pcall(function() return jsonDecode(content) end)
+        if ok and json then
+            return json
+        else
+            gg.alert("Lỗi phân tích JSON từ server")
+            return nil
+        end
+    else
+        gg.alert("Lỗi tải file JSON: " .. tostring(response.status))
+        return nil
+    end
+end
+
+-- Hàm decode JSON đơn giản (nếu không có thư viện JSON)
+function jsonDecode(str)
+    -- Thư viện JSON chuẩn không có sẵn, bạn có thể dùng cjson hoặc tự parse
+    -- Đây là ví dụ dùng loadstring (chỉ áp dụng với JSON rất đơn giản, không khuyến nghị)
+    local f, err = load("return " .. str:gsub("null", "nil"))
+    if not f then return nil, err end
+    local success, result = pcall(f)
+    if success then return result else return nil, result end
+end
+
+-- Hàm kiểm tra username trong danh sách
+function isValidUser(userlist, username)
+    -- Giả sử userlist là bảng { username1 = "key1", username2 = "key2", ... }
+    if userlist[username] then
+        return true
+    end
+    return false
+end
+
+-- Hàm chạy script từ link raw
+function runScript(url)
+    gg.loadScript(url)
+end
+
+function main()
+    local username = getUsername()
+    local userlist = getUserList()
+    if not userlist then
+        gg.alert("Không thể lấy danh sách đăng nhập!")
+        os.exit()
+    end
+
+    if isValidUser(userlist, username) then
+        gg.alert("Đăng nhập thành công! Đang chạy script...")
+        local script_url = "https://raw.githubusercontent.com/annguyen934/an/main/an"
+        runScript(script_url)
+    else
+        gg.alert("Tên đăng nhập không hợp lệ!")
+        os.exit()
+    end
+end
