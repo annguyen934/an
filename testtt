@@ -1,4 +1,3 @@
-
 gg.alert("Script bắt đ ầu!")
 local dragons = {
   {9900, "Autumn Dragon"},
@@ -2120,89 +2119,133 @@ local dragons = {
 }
 
 local function filterDragons(keyword)
-  if keyword == nil or keyword == "" then
-    return dragons -- trả về tất cả nếu không nhập gì
+  if not keyword or keyword == "" then
+    return dragons
   end
   local filtered = {}
   keyword = keyword:lower()
-  for _, v in ipairs(dragons) do
-    if v[2]:lower():find(keyword) then
-      table.insert(filtered, v)
+  for _, d in ipairs(dragons) do
+    if d[2]:lower():find(keyword) then
+      table.insert(filtered, d)
     end
   end
   return filtered
 end
 
--- Hàm cho người dùng nhập và chọn rồng
-local function chooseDragonWithFilter(prompt)
-  local input = gg.prompt({prompt or "Nhập từ khóa để lọc rồng"}, {[1] = ""}, {[1] = "text"})
-  if input == nil then
-    gg.toast("Bạn đã hủy")
+-- Hàm hiển thị hộp chọn rồng có lọc
+local function chooseDragon()
+  local keywordPrompt = gg.prompt({"Nhập từ khóa lọc danh sách rồng (để trống hiện tất cả):"}, {""}, {"text"})
+  if not keywordPrompt then
+    gg.toast("Đã huỷ")
     return nil, nil
   end
-  local filtered = filterDragons(input[1])
-  if #filtered == 0 then
-    gg.toast("Không tìm thấy rồng phù hợp")
+
+  local filteredList = filterDragons(keywordPrompt[1])
+  if #filteredList == 0 then
+    gg.alert("Không tìm thấy rồng phù hợp.")
     return nil, nil
   end
 
   local choices = {}
-  for i,v in ipairs(filtered) do
-    choices[i] = v[1] .. " - " .. v[2]
+  for i, d in ipairs(filteredList) do
+    choices[i] = d[1] .. " - " .. d[2]
   end
-  local choice = gg.choice(choices, nil, "Chọn rồng")
-  if choice == nil then
-    gg.toast("Bạn đã hủy lựa chọn")
+
+  local choiceIndex = gg.choice(choices, nil, "Chọn một con rồng")
+  if not choiceIndex then
+    gg.toast("Đã huỷ chọn")
     return nil, nil
   end
-  return filtered[choice][1], filtered[choice][2]
+
+  return filteredList[choiceIndex][1], filteredList[choiceIndex][2]
 end
 
--- Chọn rồng 1
-local ma1, ten1 = chooseDragonWithFilter("Nhập tên hoặc phần tên rồng cho lựa chọn 1")
+-- Chọn ma1
+local ma1, ten1 = chooseDragon()
 if not ma1 then return end
+gg.toast("Chọn rồng 1: " .. ma1 .. " - " .. ten1)
 
+-- Tìm kiếm ma1;-1;0:: (DWORD)
 gg.searchNumber(ma1 .. ";-1;0::", gg.TYPE_DWORD)
-gg.refineNumber(ma1 .. , gg.TYPE_DWORD)
-local results = gg.getResults(gg.getResultCount())
-for i,v in ipairs(results) do
-  v.value = tostring(1010 + i) -- sửa thành 1011, 1012, ...
-end
-gg.setValues(results)
-gg.clearResults()
-gg.invisible()
-
--- Chọn rồng 2
-local ma2, ten2 = chooseDragonWithFilter("Nhập tên hoặc phần tên rồng cho lựa chọn 2")
-if not ma2 then return end
-
-gg.searchNumber(ma2 .. ";-1;0::", gg.TYPE_DWORD)
-local results2 = gg.getResults(gg.getResultCount())
-for i,v in ipairs(results2) do
-  v.value = tostring(ma1)
-end
-gg.setValues(results2)
-gg.clearResults()
-
--- GOTO và copy dán theo offset
-local results3 = gg.getResults(1)
-if #results3 == 0 then
-  gg.toast("Không tìm thấy giá trị ma1")
+local count1 = gg.getResultCount()
+if count1 == 0 then
+  gg.alert("Không tìm thấy giá trị cho mã rồng " .. ma1)
   return
 end
 
-local baseAddr = results3[1].address
+local results1 = gg.getResults(count1)
 
-local copyValues = gg.getValues({
-  {address = baseAddr + 12 * 4, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 13 * 4, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 14 * 4, flags = gg.TYPE_DWORD},
-})
+-- Sửa giá trị thành 1011, 1012, 1013,...
+for i = 1, #results1 do
+  results1[i].value = 1010 + i
+end
+gg.editValues(results1)
+gg.toast("Đã sửa giá trị thành 1011 + tăng dần")
 
-gg.setValues({
-  {address = baseAddr + 13 * 4, flags = gg.TYPE_DWORD, value = copyValues[1].value},
-  {address = baseAddr + 14 * 4, flags = gg.TYPE_DWORD, value = copyValues[2].value},
-  {address = baseAddr + 15 * 4, flags = gg.TYPE_DWORD, value = copyValues[3].value},
-})
+gg.invisible()
 
-gg.toast("Hoàn thành chỉnh sửa")
+-- Lọc ma2 từ vùng đã sửa (1011+), không tìm kiếm lại
+-- Dùng prompt chọn rồng để lấy mã ma2, sau đó lọc trong results1 đã sửa
+local ma2, ten2 = chooseDragon()
+if not ma2 then return end
+gg.toast("Chọn rồng 2: " .. ma2 .. " - " .. ten2)
+
+-- Lọc trong kết quả đã sửa để lấy ma2
+local filteredResults2 = {}
+for i, r in ipairs(results1) do
+  if r.value == ma2 then -- So sánh với mã ma2 chọn
+    table.insert(filteredResults2, r)
+  end
+end
+
+if #filteredResults2 == 0 then
+  gg.alert("Không tìm thấy giá trị ma2 trong vùng đã sửa.")
+  return
+end
+
+-- Sửa ma2 đã lọc thành ma1
+for i = 1, #filteredResults2 do
+  filteredResults2[i].value = ma1
+end
+gg.editValues(filteredResults2)
+gg.toast("Đã sửa ma2 thành ma1")
+
+-- Tìm lại địa chỉ ma1
+gg.searchNumber(ma1 .. ";-1;0::", gg.TYPE_DWORD)
+local goResults = gg.getResults(1)
+if #goResults == 0 then
+  gg.alert("Không tìm thấy giá trị để GOTO")
+  return
+end
+
+local baseAddr = goResults[1].address
+gg.gotoAddress(baseAddr)
+gg.toast("Đã chuyển đến địa chỉ mã rồng " .. ma1)
+
+-- Copy 3 dòng offset 12 dòng so với ma1
+local copyAddr = baseAddr + 12 * 4  -- mỗi DWORD 4 byte
+local copyResults = gg.getResults(3, copyAddr)
+if #copyResults < 3 then
+  gg.alert("Không đủ dữ liệu để copy")
+  return
+end
+
+local copyValues = {}
+for i = 1, 3 do
+  copyValues[i] = copyResults[i].value
+end
+
+-- Dán vào offset 13, 14, 15
+local pasteAddr = baseAddr + 13 * 4
+local pasteResults = gg.getResults(3, pasteAddr)
+if #pasteResults < 3 then
+  gg.alert("Không đủ dữ liệu để dán")
+  return
+end
+
+for i = 1, 3 do
+  pasteResults[i].value = copyValues[i]
+end
+gg.editValues(pasteResults)
+
+gg.toast("Đã copy 3 dòng và dán vào offset 13, 14, 15")
