@@ -2152,7 +2152,7 @@ while true do
       break
     else
       local selected = filteredList[choice]
-      gg.alert(string.format("Mã số: %d\nTên: %s", selected[1], selected[2]))
+      gg.alert(string.format("id: %d\nTên: %s", selected[1], selected[2]))
     end
   end
 end
