@@ -1,4 +1,5 @@
-local dragonList = {
+gg.alert("Script bắt đầu!")
+local dragons = {
   {9900, "Autumn Dragon"},
   {3381, "High Cloaked Critical"},
   {3375, "SML Dragon"},
