@@ -2163,7 +2163,7 @@ local ma1, ten1 = chooseDragonWithFilter("Nhập tên hoặc phần tên rồng 
 if not ma1 then return end
 
 gg.searchNumber(ma1 .. ";-1;0::", gg.TYPE_DWORD)
-gg.refineNumber(ma1 .. ", gg.TYPE_DWORD)
+gg.refineNumber(ma1 .. , gg.TYPE_DWORD)
 local results = gg.getResults(gg.getResultCount())
 for i,v in ipairs(results) do
   v.value = tostring(1010 + i) -- sửa thành 1011, 1012, ...
