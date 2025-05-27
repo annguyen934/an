@@ -2116,45 +2116,112 @@ local dragonList = {
   {1001, "Firebird Dragon"},
   {1000, "Nature Dragon"},
 }
-local function filterDragons(keyword)
-  if keyword == nil or keyword == "" then
-    return dragonList
-  end
-  local filtered = {}
-  keyword = keyword:lower()
-  for _, v in ipairs(dragonList) do
-    if v[2]:lower():find(keyword) then
-      table.insert(filtered, v)
+function chooseDragon(title)
+  while true do
+    local filter = gg.prompt({title .. "\nNhập từ khóa lọc tên (để trống xem tất cả):"}, {""}, {"text"})
+    if not filter then return nil end
+    filter = filter[1]:lower()
+    
+    local list = {}
+    for i, v in ipairs(dragons) do
+      if filter == "" or v[2]:lower():find(filter) then
+        list[#list + 1] = v[1] .. " - " .. v[2]
+      end
+    end
+    
+    if #list == 0 then
+      gg.alert("Không tìm thấy rồng nào phù hợp.")
+    else
+      local choice = gg.choice(list, nil, "Chọn rồng")
+      if choice then
+        return list[choice]
+      else
+        return nil
+      end
     end
   end
-  return filtered
 end
 
-while true do
-  local keyword = gg.prompt({"Nhập từ khóa lọc tên rồng (để trống hiện tất cả):"}, nil, {"text"})
-  if keyword == nil then
-    gg.toast("Đã hủy")
+-- Chọn rồng lần 1
+local selected1 = chooseDragon("Lựa chọn Rồng lần 1")
+if not selected1 then gg.alert("Hủy lựa chọn lần 1"); return end
+local input1 = tonumber(selected1:match("^(%d+)"))
+gg.alert("Chọn rồng lần 1: " .. selected1 .. "\ninput1 = " .. input1)
+
+-- Tìm kiếm chuỗi input1;-1;0::
+local searchStr = input1 .. ";-1;0::"
+gg.alert("Tìm kiếm chuỗi: " .. searchStr)
+
+gg.searchNumber(searchStr, gg.TYPE_BYTE, false, gg.SIGN_EQUAL, 0, -1)
+local results = gg.getResults(1000)
+
+if #results == 0 then
+  gg.alert("Không tìm thấy kết quả với chuỗi tìm kiếm.")
+  return
+end
+
+-- Sửa giá trị input1 thành 1011 tăng dần theo thứ tự kết quả
+local newBase = 1011
+for i = 1, #results do
+  results[i].value = tostring(newBase + i - 1)
+  results[i].freeze = false
+end
+gg.setValues(results)
+gg.clearResults()
+
+gg.invisible(true)
+
+-- Chọn rồng lần 2
+local selected2 = chooseDragon("Lựa chọn Rồng lần 2")
+if not selected2 then gg.alert("Hủy lựa chọn lần 2"); return end
+local input2 = tonumber(selected2:match("^(%d+)"))
+gg.alert("Chọn rồng lần 2: " .. selected2 .. "\ninput2 = " .. input2)
+
+-- Tìm lại kết quả với input2 (đã sửa thành input1)
+local targetValue = tostring(input2)
+gg.searchNumber(targetValue, gg.TYPE_BYTE, false, gg.SIGN_EQUAL, 0, -1)
+local found = gg.getResults(1000)
+
+if #found == 0 then
+  gg.alert("Không tìm thấy kết quả với giá trị input2: " .. targetValue)
+  return
+end
+
+-- Lấy giá trị var của input1 (bây giờ là 1011 trở lên)
+local input1Value = tostring(newBase + input2 - input1) -- biến input1 đã sửa (cần tùy biến nếu khác)
+-- Lấy vị trí address var của input1
+local baseAddress = nil
+for i,v in ipairs(found) do
+  if v.value == input1Value then
+    baseAddress = v.address
     break
   end
-
-  local filteredList = filterDragons(keyword[1])
-
-  if #filteredList == 0 then
-    gg.alert("Không tìm thấy rồng nào phù hợp với từ khóa: "..keyword[1])
-  else
-    local choices = {}
-    for i, v in ipairs(filteredList) do
-      table.insert(choices, string.format("%d - %s", v[1], v[2]))
-    end
-    local choice = gg.choice(choices, nil, "Chọn 1 rồng để xem chi tiết")
-    if choice == nil then
-      gg.toast("Đã hủy lựa chọn")
-      break
-    else
-      local selected = filteredList[choice]
-      gg.alert(string.format("id: %d\nTên: %s", selected[1], selected[2]))
-    end
-  end
 end
 
-gg.toast("Kết thúc script")
+if not baseAddress then
+  gg.alert("Không tìm thấy địa chỉ base tương ứng input1Value.")
+  return
+end
+
+-- Copy giá trị offset +12 dòng (giả sử mỗi dòng 4 bytes)
+-- Copy 4 bytes ở offset +12
+local offset12 = baseAddress + 12 * 4
+local dataCopy = gg.getValues({{address = offset12, flags = gg.TYPE_DWORD, freeze = false}})
+
+if not dataCopy or #dataCopy == 0 then
+  gg.alert("Không lấy được dữ liệu offset +12.")
+  return
+end
+
+-- Dán dữ liệu này vào offset +13, +14, +15
+local addressesToWrite = {
+  {address = baseAddress + 13 * 4, flags = gg.TYPE_DWORD, value = dataCopy[1].value},
+  {address = baseAddress + 14 * 4, flags = gg.TYPE_DWORD, value = dataCopy[1].value},
+  {address = baseAddress + 15 * 4, flags = gg.TYPE_DWORD, value = dataCopy[1].value},
+}
+
+gg.setValues(addressesToWrite)
+
+gg.alert("Hoàn thành copy và dán dữ liệu offset +12 vào các dòng +13, +14, +15.")
+
+gg.invisible(false)
