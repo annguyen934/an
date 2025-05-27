@@ -1,4 +1,3 @@
-local gg = gg
 gg.alert("Script bắt đầu!")
 local dragons = {
   {9900, "Autumn Dragon"},
