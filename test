@@ -9,7 +9,7 @@ end
 
 -- Hàm tải file JSON danh sách usernames từ GitHub (link raw)
 function getUserList()
-    local url = "https://raw.githubusercontent.com/annguyen934/an/main/keys.json"
+    local url = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/keys.json"
     local response = gg.makeRequest(url)
     if response.status == 200 then
         local content = response.content
