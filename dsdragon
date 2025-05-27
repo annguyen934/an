@@ -2119,53 +2119,71 @@ local dragons = {
   {1000, "Nature Dragon"},
 }
 
-local function chooseDragon()
-  local list = {}
-  for i,v in ipairs(dragons) do
-    list[i] = v[1] .. " - " .. v[2]
+local function filterDragons(keyword)
+  if keyword == nil or keyword == "" then
+    return dragons -- trả về tất cả nếu không nhập gì
   end
-  local choice = gg.choice(list, nil, "Chọn rồng")
-  if choice == nil then
-    gg.toast("Bạn đã hủy")
-    return nil,nil
+  local filtered = {}
+  keyword = keyword:lower()
+  for _, v in ipairs(dragons) do
+    if v[2]:lower():find(keyword) then
+      table.insert(filtered, v)
+    end
   end
-  return dragons[choice][1], dragons[choice][2]
+  return filtered
 end
 
--- Bắt đầu chọn rồng đầu tiên
-local ma1, ten1 = chooseDragon()
+-- Hàm cho người dùng nhập và chọn rồng
+local function chooseDragonWithFilter(prompt)
+  local input = gg.prompt({prompt or "Nhập từ khóa để lọc rồng"}, {[1] = ""}, {[1] = "text"})
+  if input == nil then
+    gg.toast("Bạn đã hủy")
+    return nil, nil
+  end
+  local filtered = filterDragons(input[1])
+  if #filtered == 0 then
+    gg.toast("Không tìm thấy rồng phù hợp")
+    return nil, nil
+  end
+
+  local choices = {}
+  for i,v in ipairs(filtered) do
+    choices[i] = v[1] .. " - " .. v[2]
+  end
+  local choice = gg.choice(choices, nil, "Chọn rồng")
+  if choice == nil then
+    gg.toast("Bạn đã hủy lựa chọn")
+    return nil, nil
+  end
+  return filtered[choice][1], filtered[choice][2]
+end
+
+-- Chọn rồng 1
+local ma1, ten1 = chooseDragonWithFilter("Nhập tên hoặc phần tên rồng cho lựa chọn 1")
 if not ma1 then return end
 
--- Tìm kiếm ma1 (DWORD)
 gg.searchNumber(ma1 .. ";-1;0::", gg.TYPE_DWORD)
-
--- Lọc ma1, sửa thành 1011 tăng dần
 local results = gg.getResults(gg.getResultCount())
 for i,v in ipairs(results) do
-  v.value = tostring(1010 + i) -- tăng dần từ 1011
+  v.value = tostring(1010 + i) -- sửa thành 1011, 1012, ...
 end
 gg.setValues(results)
 gg.clearResults()
 gg.invisible()
 
--- Chọn rồng thứ hai
-local ma2, ten2 = chooseDragon()
+-- Chọn rồng 2
+local ma2, ten2 = chooseDragonWithFilter("Nhập tên hoặc phần tên rồng cho lựa chọn 2")
 if not ma2 then return end
 
--- Tìm kiếm ma2 (DWORD)
 gg.searchNumber(ma2 .. ";-1;0::", gg.TYPE_DWORD)
-
--- Lọc các kết quả dựa trên dãy đã sửa (1011+)
 local results2 = gg.getResults(gg.getResultCount())
-
--- Sửa lại ma2 thành ma1 trên kết quả
 for i,v in ipairs(results2) do
   v.value = tostring(ma1)
 end
 gg.setValues(results2)
 gg.clearResults()
 
--- GOTO giá trị ma1, copy dòng offset 12, dán vào 13 14 15
+-- GOTO và copy dán theo offset
 local results3 = gg.getResults(1)
 if #results3 == 0 then
   gg.toast("Không tìm thấy giá trị ma1")
@@ -2187,4 +2205,3 @@ gg.setValues({
 })
 
 gg.toast("Hoàn thành chỉnh sửa")
-
