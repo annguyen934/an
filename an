@@ -1,0 +1,568 @@
+function mainMenu()
+  local choices = gg.choice({
+    "1. đặt chuồng mọi nơi",
+    "2. ez arena",
+    "3. luyen rank r",
+    "4. ez resuce",
+    "5.hack lv rong",
+    "6.luyện skill",
+    "7. Thoát"
+  }, nil, "=== bố an vĩ đại vcl ===")
+
+  if choices == 1 then
+    antireload()
+  elseif choices == 2 then
+    arena()
+  elseif choices == 3 then
+    luyenrank()
+  elseif choices == 4 then
+    rescue()
+    elseif choices == 5 then
+    levr()
+    elseif choices == 6 then
+    luyensk()
+  elseif choices == 7 then
+    os.exit()
+  else
+    gg.toast("nguu")
+  end
+end
+
+function antireload()
+gg.setRanges(gg.REGION_C_ALLOC)
+            gg.searchNumber("-300~300F;1 086 324 736;1 086 324 736::9", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+            gg.refineNumber("1 086 324 736", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+            gg.getResults(5000)
+            gg.editAll("0", gg.TYPE_DWORD)
+            gg.clearResults()
+            gg.setRanges(gg.REGION_C_ALLOC)
+            gg.searchNumber("-300~300F;1 084 227 584;1 084 227 584::9", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+            gg.refineNumber("1 084 227 584", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+            gg.getResults(5000)
+            gg.editAll("0", gg.TYPE_DWORD)
+            gg.clearResults()
+            end
+
+function arena()
+  local input = gg.prompt(
+    {
+      "code rồng1:",
+      "lev rồng 1:",
+      "sao rồng 1:",
+      "code rồng 2:",
+      "lev rồng 2:",
+      "sao rồng 2:",
+      "code rồng 3:",
+      "lev rồng 3:",
+      "sao rồng 3:"
+    },
+    nil,
+    {
+      "number", "number", "number",
+      "number", "number", "number",
+      "number", "number", "number"
+    }
+  )
+
+  if input == nil then
+    gg.toast("ngu")
+    return
+  end
+
+  local pattern = table.concat(input, ";") .. "::" -- Gộp thành chuỗi tìm kiếm
+  gg.searchNumber(pattern, gg.TYPE_DWORD)
+  gg.getResults(5000)
+            gg.editAll("1011;1;0;1011;1;0;1011;1;0", gg.TYPE_DWORD)
+  local ketQua = gg.getResultsCount()
+
+  if ketQua > 0 then
+    gg.toast("Đã tìm thấy " .. ketQua .. " kết quả.")
+  else
+    gg.alert("đéo tìm thấy mẹ gì")
+    gg.getResults(5000)
+            gg.editAll("1011;1;0;1011;1;0;1011;1;0", gg.TYPE_DWORD)
+            gg.clearResults()
+  end
+end
+
+function luyenrank()
+  local input = gg.prompt(
+    {
+      "code rồng1:",
+      "lev rồng 1:",
+      "sao rồng 1:",
+      "code rồng 2:",
+      "lev rồng 2:",
+      "sao rồng 2:",
+      "code rồng 3:",
+      "lev rồng 3:",
+      "sao rồng 3:"
+    },
+    nil,
+    {
+      "number", "number", "number",
+      "number", "number", "number",
+      "number", "number", "number"
+    }
+  )
+
+  if input == nil then
+    gg.toast("ngu")
+    return
+  end
+
+  local pattern = table.concat(input, ";") .. "::" -- Gộp thành chuỗi tìm kiếm
+  gg.searchNumber(pattern, gg.TYPE_DWORD)
+  gg.getResults(5000)
+            gg.editAll("1011;1;0;1011;1;0;3266;3266;5", gg.TYPE_DWORD)
+  local ketQua = gg.getResultsCount()
+
+  if ketQua > 0 then
+    gg.toast("Đã tìm thấy " .. ketQua .. " kết quả.")
+  else
+    gg.alert("đéo tìm thấy mẹ gì")
+    gg.getResults(5000)
+            gg.editAll("1011;1;0;1011;1;0;3266;3266;5", gg.TYPE_DWORD)
+            gg.clearResults()
+  end
+  end
+
+function rescue()
+gg.clearResults()
+    gg.setRanges(gg.REGION_C_ALLOC | gg.REGION_ANONYMOUS)
+    gg.searchNumber("1000~5600;-1;10~70;0~5::17", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
+    gg.refineNumber("1000~5600;-1;10~70::10", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
+    gg.refineNumber("1000~5600;10~70::10", gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1, 0)
+    gg.getResults(99999)
+    gg.editAll("1011;1", gg.TYPE_DWORD)
+      gg.clearResults()
+      end
+function levr()
+--- Nhập giá trị thay cho 3246
+local input = gg.prompt(
+  {"nhập id rồng (ví dụ: 3246)"},
+  nil,
+  {"number"}
+)
+
+if input == nil then
+  gg.toast("nguu")
+  return
+end
+
+local targetValue = tonumber(input[1])
+if targetValue == nil then
+  gg.alert("sai rồi em")
+  return
+end
+
+gg.clearResults()
+gg.searchNumber(targetValue .. ";-1;0::", gg.TYPE_DWORD)
+gg.refineNumber(targetValue, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+local results = gg.getResults(100)
+
+-- Thay thế targetValue (nếu cần sửa, chỉnh ở dòng bên dưới)
+for i, v in ipairs(results) do
+  if v.value == targetValue then
+    v.value = targetValue -- Giữ nguyên, hoặc thay bằng số khác nếu muốn
+  end
+end
+
+gg.setValues(results)
+
+-- Thêm giá trị mới sau mỗi chuỗi (sau 3 DWORD)
+local extra = {}
+for i, v in ipairs(results) do
+  table.insert(extra, {
+    address = v.address + 4 * 3,
+    flags = gg.TYPE_DWORD,
+    value = 1  -- Thay 1 bằng số khác nếu bạn muốn thêm số khác
+  })
+end
+
+gg.setValues(extra)
+gg.toast("ok cái code rồng t xử xong r " .. targetValue)
+gg.setValues(results)
+
+-- Thêm giá trị tăng dần sau chuỗi (1, 2, 3,...)
+local extra = {}
+for i, v in ipairs(results) do
+  table.insert(extra, {
+    address = v.address + 4 * 3,
+    flags = gg.TYPE_DWORD,
+    value = i -- Tăng dần theo thứ tự
+  })
+end
+end
+function luyensk()
+  local skillChoice = gg.choice({
+    "1. Luyện Skill 1",
+    "2. Luyện Skill 2",
+    "3. Luyện Skill 3",
+    "4. Luyện Skill 4"
+  }, nil, "Lên web mà tra code rồng")
+
+  if skillChoice == 1 then
+    skilldau()
+  elseif skillChoice == 2 then
+    skillhai()
+  elseif skillChoice == 3 then
+    skillba()
+  elseif skillChoice == 4 then
+    skillbon()
+  else
+    gg.toast("cmm đéo chọn à")
+  end
+end
+    function skilldau()
+    gg.alert("luyện skill 1")
+
+-- Nhập input1
+local input1Tbl = gg.prompt({"id con rồng cần luyện"})
+if not input1Tbl or not input1Tbl[1] then
+  gg.alert("đéo nhập id tìm bằng dái à?.")
+  return
+end
+local input1 = tonumber(input1Tbl[1])
+
+-- Tìm input1;-1;0::
+gg.clearResults()
+gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
+local allResults = gg.getResults(gg.getResultsCount())
+
+-- Lọc các dòng có đúng input1
+local input1Results = {}
+for _, v in ipairs(allResults) do
+  if v.value == input1 then
+    table.insert(input1Results, v)
+  end
+end
+
+if #input1Results == 0 then
+  gg.alert("chịu đéo tìm thấy.")
+  return
+end
+
+-- Sửa thành 1011, 1012, ...
+for i = 1, #input1Results do
+  input1Results[i].value = 1010 + i
+end
+gg.setValues(input1Results)
+
+-- Ẩn GG, chờ mở lại
+gg.setVisible(false)
+gg.alert("đã đổi code rồng ")
+
+-- Chờ GG được mở lại
+while not gg.isVisible(true) do
+  gg.sleep(100)
+end
+gg.setVisible(false)
+
+-- Nhập input2
+local input2Tbl = gg.prompt({"nhập lại code rồng sau đổi"})
+if not input2Tbl or not input2Tbl[1] then
+  gg.alert("đm đéo nhập sao chạy")
+  return
+end
+local input2 = tonumber(input2Tbl[1])
+
+-- Lọc trong allResults các dòng có giá trị = input2 → sửa thành input1
+local updatedFromInput2 = {}
+for _, v in ipairs(allResults) do
+  if v.value == input2 then
+    v.value = input1
+    table.insert(updatedFromInput2, v)
+  end
+end
+
+if #updatedFromInput2 == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+gg.setValues(updatedFromInput2)
+
+-- Dùng địa chỉ của 1 dòng input1 vừa sửa từ input2 để làm gốc
+local baseAddr = updatedFromInput2[1].address
+
+-- Lấy giá trị offset tại dòng +12 (12 * 4 = 48 byte)
+local offset12Val = gg.getValues({
+  {address = baseAddr + 12 * 4, flags = gg.TYPE_DWORD}
+})[1].value
+
+-- Dán giá trị đó vào dòng 13, 14, 15
+local setOffsets = {
+  {address = baseAddr + 13 * 4, value = offset12Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 14 * 4, value = offset12Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 15 * 4, value = offset12Val, flags = gg.TYPE_DWORD}
+}
+gg.setValues(setOffsets)
+
+gg.alert("xong vô luyện skill đi chờ cc gì?")
+end
+function skillhai()
+gg.alert("luyện skill 2")
+
+-- Bước 1: Nhập input1
+local input1Tbl = gg.prompt({"id rồng cần luyện"})
+if not input1Tbl or not input1Tbl[1] then
+  gg.alert("k nhập sao tìm địt mẹ mày")
+  return
+end
+local input1 = tonumber(input1Tbl[1])
+
+-- Bước 2: Tìm input1;-1;0::
+gg.clearResults()
+gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
+local allResults = gg.getResults(gg.getResultsCount())
+
+-- Bước 3: Lọc đúng input1
+local input1Results = {}
+for _, v in ipairs(allResults) do
+  if v.value == input1 then
+    table.insert(input1Results, v)
+  end
+end
+
+if #input1Results == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+-- Bước 4: Sửa thành 1011, 1012, ...
+for i = 1, #input1Results do
+  input1Results[i].value = 1010 + i
+end
+gg.setValues(input1Results)
+
+-- Bước 5: Ẩn GG, đợi người dùng mở lại
+gg.setVisible(false)
+gg.alert("nhập code rồng đã đổi")
+
+while not gg.isVisible(true) do
+  gg.sleep(100)
+end
+gg.setVisible(false)
+
+-- Bước 6: Nhập input2
+local input2Tbl = gg.prompt({"nhập code rồng sau đổi"})
+if not input2Tbl or not input2Tbl[1] then
+  gg.alert("Bạn chưa nhập input2.")
+  return
+end
+local input2 = tonumber(input2Tbl[1])
+
+-- Bước 7: Lọc lại từ allResults các dòng có giá trị = input2 → sửa thành input1
+local updatedFromInput2 = {}
+for _, v in ipairs(allResults) do
+  if v.value == input2 then
+    v.value = input1
+    table.insert(updatedFromInput2, v)
+  end
+end
+
+if #updatedFromInput2 == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+gg.setValues(updatedFromInput2)
+
+-- Bước 8: Dùng dòng đầu tiên vừa sửa để GOTO
+local baseAddr = updatedFromInput2[1].address
+
+-- Bước 9: Lấy giá trị offset +13 (13 * 4 = 52 byte)
+local offset13Val = gg.getValues({
+  {address = baseAddr + 13 * 4, flags = gg.TYPE_DWORD}
+})[1].value
+
+-- Bước 10: Dán vào dòng offset 12, 14, 15
+local setOffsets = {
+  {address = baseAddr + 12 * 4, value = offset13Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 14 * 4, value = offset13Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 15 * 4, value = offset13Val, flags = gg.TYPE_DWORD}
+}
+gg.setValues(setOffsets)
+
+gg.alert("xong")
+end
+function skillba()
+gg.alert("skill 3")
+
+-- Bước 1: Nhập input1
+local input1Tbl = gg.prompt({"code rồng cần luyện"})
+if not input1Tbl or not input1Tbl[1] then
+  gg.alert("đéo nhập à?")
+  return
+end
+local input1 = tonumber(input1Tbl[1])
+
+-- Bước 2: Tìm input1;-1;0::
+gg.clearResults()
+gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
+local allResults = gg.getResults(gg.getResultsCount())
+
+-- Bước 3: Lọc đúng input1
+local input1Results = {}
+for _, v in ipairs(allResults) do
+  if v.value == input1 then
+    table.insert(input1Results, v)
+  end
+end
+
+if #input1Results == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+-- Bước 4: Sửa thành 1011, 1012, ...
+for i = 1, #input1Results do
+  input1Results[i].value = 1010 + i
+end
+gg.setValues(input1Results)
+
+-- Bước 5: Ẩn GG, đợi người dùng mở lại
+gg.setVisible(false)
+gg.alert("đã thay code rồng")
+
+while not gg.isVisible(true) do
+  gg.sleep(100)
+end
+gg.setVisible(false)
+
+-- Bước 6: Nhập input2
+local input2Tbl = gg.prompt({"code rồng sau khi thay"})
+if not input2Tbl or not input2Tbl[1] then
+  gg.alert("đéo nhập ăn cc à")
+  return
+end
+local input2 = tonumber(input2Tbl[1])
+
+-- Bước 7: Lọc lại từ allResults các dòng có giá trị = input2 → sửa thành input1
+local updatedFromInput2 = {}
+for _, v in ipairs(allResults) do
+  if v.value == input2 then
+    v.value = input1
+    table.insert(updatedFromInput2, v)
+  end
+end
+
+if #updatedFromInput2 == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+gg.setValues(updatedFromInput2)
+
+-- Bước 8: Dùng dòng đầu tiên vừa sửa để GOTO
+local baseAddr = updatedFromInput2[1].address
+
+-- Bước 9: Lấy giá trị offset +14 (14 * 4 = 56 byte)
+local offset14Val = gg.getValues({
+  {address = baseAddr + 14 * 4, flags = gg.TYPE_DWORD}
+})[1].value
+
+-- Bước 10: Dán vào dòng offset 12, 13, 15
+local setOffsets = {
+  {address = baseAddr + 12 * 4, value = offset14Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 13 * 4, value = offset14Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 15 * 4, value = offset14Val, flags = gg.TYPE_DWORD}
+}
+gg.setValues(setOffsets)
+
+gg.alert("ngu xong r")
+end
+function skillbon()
+gg.alert("skill 4")
+
+-- Nhập input1
+local input1Tbl = gg.prompt({"code rồng cần luyện"})
+if not input1Tbl or not input1Tbl[1] then
+  gg.alert("đéo nhập sao luyện.")
+  return
+end
+local input1 = tonumber(input1Tbl[1])
+
+-- Tìm input1;-1;0::
+gg.clearResults()
+gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
+local allResults = gg.getResults(gg.getResultsCount())
+
+-- Lọc đúng input1
+local input1Results = {}
+for _, v in ipairs(allResults) do
+  if v.value == input1 then
+    table.insert(input1Results, v)
+  end
+end
+
+if #input1Results == 0 then
+  gg.alert("đéo thấy")
+  return
+end
+
+-- Sửa thành 1011, 1012, ...
+for i = 1, #input1Results do
+  input1Results[i].value = 1010 + i
+end
+gg.setValues(input1Results)
+
+-- Ẩn GG → chờ người dùng nhấn lại biểu tượng
+gg.setVisible(false)
+gg.alert("đã thay code")
+
+while not gg.isVisible(true) do
+  gg.sleep(100)
+end
+gg.setVisible(false)
+
+-- Nhập input2
+local input2Tbl = gg.prompt({"code sau sửa:"})
+if not input2Tbl or not input2Tbl[1] then
+  gg.alert("Bạn chưa nhập input2.")
+  return
+end
+local input2 = tonumber(input2Tbl[1])
+
+-- Lọc từ kết quả ban đầu → các dòng có value = input2 → sửa thành input1
+local updatedFromInput2 = {}
+for _, v in ipairs(allResults) do
+  if v.value == input2 then
+    v.value = input1
+    table.insert(updatedFromInput2, v)
+  end
+end
+
+if #updatedFromInput2 == 0 then
+  gg.alert("đéo có")
+  return
+end
+
+gg.setValues(updatedFromInput2)
+
+-- Goto dòng input1 vừa sửa từ input2
+local baseAddr = updatedFromInput2[1].address
+
+-- Lấy giá trị tại offset +15
+local offset15Val = gg.getValues({
+  {address = baseAddr + 15 * 4, flags = gg.TYPE_DWORD}
+})[1].value
+
+-- Dán vào offset 12, 13, 14
+local setOffsets = {
+  {address = baseAddr + 12 * 4, value = offset15Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 13 * 4, value = offset15Val, flags = gg.TYPE_DWORD},
+  {address = baseAddr + 14 * 4, value = offset15Val, flags = gg.TYPE_DWORD}
+}
+gg.setValues(setOffsets)
+
+gg.alert("ok r.")
+  end
+-- Chạy menu
+while true do
+  if gg.isVisible(true) then
+    gg.setVisible(false)
+    mainMenu()
+  end
+end
