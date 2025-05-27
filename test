@@ -1,70 +1,105 @@
-function getUsername()
-    local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
-    if not input then
-        gg.alert("Bạn đã hủy đăng nhập!")
-        os.exit()
+local URL_KEYS = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/keys.json"
+local URL_SCRIPT = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/an"
+
+local STORAGE_PATH = gg.getFilePath() .. "/saved_username.txt"
+
+-- Hàm đọc tên đăng nhập đã lưu
+local function readSavedUsername()
+    local file = io.open(STORAGE_PATH, "r")
+    if file then
+        local username = file:read("*l")
+        file:close()
+        return username
     end
-    return input[1]
+    return nil
 end
 
--- Hàm tải file JSON danh sách usernames từ GitHub (link raw)
-function getUserList()
-    local url = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/keys.json"
-    local response = gg.makeRequest(url)
+-- Hàm lưu tên đăng nhập vào file
+local function saveUsername(username)
+    local file = io.open(STORAGE_PATH, "w+")
+    if file then
+        file:write(username)
+        file:close()
+    end
+end
+
+-- Hàm decode JSON đơn giản cho bảng dạng { "user1": true, "user2": true }
+local function simpleJsonDecode(str)
+    local f, err = load("return " .. str:gsub("null", "nil"))
+    if not f then return nil, err end
+    local ok, result = pcall(f)
+    if ok then return result else return nil, result end
+end
+
+-- Lấy dữ liệu JSON từ URL
+local function getUserList()
+    local response = gg.makeRequest(URL_KEYS)
     if response.status == 200 then
-        local content = response.content
-        local ok, json = pcall(function() return jsonDecode(content) end)
-        if ok and json then
-            return json
-        else
-            gg.alert("Lỗi phân tích JSON từ server")
+        local jsonTbl, err = simpleJsonDecode(response.content)
+        if not jsonTbl then
+            gg.alert("Lỗi phân tích JSON: " .. tostring(err))
             return nil
         end
+        return jsonTbl
     else
-        gg.alert("Lỗi tải file JSON: " .. tostring(response.status))
+        gg.alert("Lỗi tải file keys.json: HTTP " .. tostring(response.status))
         return nil
     end
 end
 
--- Hàm decode JSON đơn giản (nếu không có thư viện JSON)
-function jsonDecode(str)
-    -- Thư viện JSON chuẩn không có sẵn, bạn có thể dùng cjson hoặc tự parse
-    -- Đây là ví dụ dùng loadstring (chỉ áp dụng với JSON rất đơn giản, không khuyến nghị)
-    local f, err = load("return " .. str:gsub("null", "nil"))
-    if not f then return nil, err end
-    local success, result = pcall(f)
-    if success then return result else return nil, result end
+-- Kiểm tra user có trong danh sách
+local function isUserValid(userList, username)
+    return userList[username] == true
 end
 
--- Hàm kiểm tra username trong danh sách
-function isValidUser(userlist, username)
-    -- Giả sử userlist là bảng { username1 = "key1", username2 = "key2", ... }
-    if userlist[username] then
-        return true
+-- Lấy tên đăng nhập (ưu tiên dùng tên đã lưu)
+local function getUsername()
+    local saved = readSavedUsername()
+    if saved then
+        local choose = gg.choice({"Dùng tên đăng nhập đã lưu: "..saved, "Nhập tên đăng nhập mới", "Thoát"}, nil, "Chọn phương án")
+        if choose == 1 then
+            return saved
+        elseif choose == 2 then
+            local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
+            if input and input[1] and input[1] ~= "" then
+                saveUsername(input[1])
+                return input[1]
+            else
+                gg.alert("Tên đăng nhập không hợp lệ!")
+                os.exit()
+            end
+        else
+            os.exit()
+        end
+    else
+        local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
+        if input and input[1] and input[1] ~= "" then
+            saveUsername(input[1])
+            return input[1]
+        else
+            gg.alert("Tên đăng nhập không hợp lệ!")
+            os.exit()
+        end
     end
-    return false
 end
 
--- Hàm chạy script từ link raw
-function runScript(url)
-    gg.loadScript(url)
-end
-
-function main()
+-- Main
+local function main()
     local username = getUsername()
-    local userlist = getUserList()
-    if not userlist then
-        gg.alert("Không thể lấy danh sách đăng nhập!")
+    gg.toast("Đang kiểm tra tên đăng nhập...")
+    local userList = getUserList()
+    if not userList then
+        gg.alert("Không thể lấy danh sách tên đăng nhập!")
         os.exit()
     end
 
-    if isValidUser(userlist, username) then
-        gg.alert("Đăng nhập thành công! Đang chạy script...")
-        local script_url = "https://raw.githubusercontent.com/annguyen934/an/main/an"
-        runScript(script_url)
+    if isUserValid(userList, username) then
+        gg.alert("Đăng nhập thành công! Đang tải script...")
+        gg.loadScript(URL_SCRIPT)
     else
         gg.alert("Tên đăng nhập không hợp lệ!")
         os.exit()
     end
 end
+
 main()
