@@ -138,61 +138,99 @@ gg.clearResults()
       gg.clearResults()
       end
 function levr()
---- Nhập giá trị thay cho 3246
-local input = gg.prompt(
-  {"nhập id rồng (ví dụ: 3246)"},
-  nil,
-  {"number"}
-)
-
-if input == nil then
-  gg.toast("nguu")
-  return
+-- Hàm lấy dữ liệu rồng từ web
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = tonumber(code), name = name})
+        end
+    end
+    return #data > 0 and data or nil
 end
 
-local targetValue = tonumber(input[1])
-if targetValue == nil then
-  gg.alert("sai rồi em")
-  return
+-- Hàm lọc danh sách rồng theo tên nhập vào
+function filterDragonList(data, keyword)
+    local filtered = {}
+    keyword = keyword:lower()
+    for _, d in ipairs(data) do
+        if d.name:lower():find(keyword, 1, true) then
+            table.insert(filtered, d)
+        end
+    end
+    return filtered
 end
 
-gg.clearResults()
-gg.searchNumber(targetValue .. ";-1;0::", gg.TYPE_DWORD)
-gg.refineNumber(targetValue, gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
-local results = gg.getResults(100)
-
--- Thay thế targetValue (nếu cần sửa, chỉnh ở dòng bên dưới)
-for i, v in ipairs(results) do
-  if v.value == targetValue then
-    v.value = targetValue -- Giữ nguyên, hoặc thay bằng số khác nếu muốn
-  end
+-- Hàm chọn rồng từ danh sách (show choice)
+function chooseDragon(data)
+    local list = {}
+    for _, d in ipairs(data) do
+        table.insert(list, d.code .. " - " .. d.name)
+    end
+    local choice = gg.choice(list, nil, "Chọn rồng:")
+    if choice then
+        return data[choice].code
+    end
+    return nil
 end
 
-gg.setValues(results)
+-- Hàm nhập tên rồng, lọc danh sách rồi chọn
+function inputAndChooseDragon()
+    local data = fetchDragonData()
+    if not data then return nil end
 
--- Thêm giá trị mới sau mỗi chuỗi (sau 3 DWORD)
-local extra = {}
-for i, v in ipairs(results) do
-  table.insert(extra, {
-    address = v.address + 4 * 3,
-    flags = gg.TYPE_DWORD,
-    value = 1  -- Thay 1 bằng số khác nếu bạn muốn thêm số khác
-  })
+    local input = gg.prompt({"Nhập tên rồng để tìm:"}, {""}, {"text"})
+    if not input then return nil end
+
+    local filtered = filterDragonList(data, input[1])
+    if #filtered == 0 then
+        gg.alert("Không tìm thấy rồng nào phù hợp.")
+        return nil
+    end
+
+    return chooseDragon(filtered)
 end
 
-gg.setValues(extra)
-gg.toast("ok cái code rồng t xử xong r " .. targetValue)
-gg.setValues(results)
+-- Hàm chính
+function main()
+    local input1 = inputAndChooseDragon()
+    if not input1 then return end
 
--- Thêm giá trị tăng dần sau chuỗi (1, 2, 3,...)
-local extra = {}
-for i, v in ipairs(results) do
-  table.insert(extra, {
-    address = v.address + 4 * 3,
-    flags = gg.TYPE_DWORD,
-    value = i -- Tăng dần theo thứ tự
-  })
+    gg.clearResults()
+    gg.searchNumber(tostring(input1) .. ";-1;0::", gg.TYPE_DWORD)
+    gg.refineNumber(tostring(input1), gg.TYPE_DWORD, false, gg.SIGN_EQUAL, 0, -1)
+    local results = gg.getResults(100)
+    if #results == 0 then
+        gg.alert("Không tìm thấy chuỗi cần tìm!")
+        return
+    end
+
+    for i, v in ipairs(results) do
+        if v.value == input1 then
+            v.value = input1
+        end
+    end
+    gg.setValues(results)
+
+    local extra = {}
+    for i, v in ipairs(results) do
+        table.insert(extra, {
+            address = v.address + 4 * 3,
+            flags = gg.TYPE_DWORD,
+            value = i
+        })
+    end
+    gg.setValues(extra)
+    gg.toast("Đã xử lý xong mã rồng: " .. input1)
 end
+
+main()
 end
 function luyensk()
   local skillChoice = gg.choice({
@@ -217,347 +255,586 @@ end
     function skilldau()
     gg.alert("luyện skill 1")
 
--- Nhập input1
-local input1Tbl = gg.prompt({"id con rồng cần luyện"})
-if not input1Tbl or not input1Tbl[1] then
-  gg.alert("đéo nhập id tìm bằng dái à?.")
-  return
-end
-local input1 = tonumber(input1Tbl[1])
-
--- Tìm input1;-1;0::
-gg.clearResults()
-gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
-local allResults = gg.getResults(gg.getResultsCount())
-
--- Lọc các dòng có đúng input1
-local input1Results = {}
-for _, v in ipairs(allResults) do
-  if v.value == input1 then
-    table.insert(input1Results, v)
-  end
+-- Lấy dữ liệu rồng từ trang web
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = code, name = name})
+        end
+    end
+    return #data > 0 and data or nil
 end
 
-if #input1Results == 0 then
-  gg.alert("chịu đéo tìm thấy.")
-  return
+-- Tìm và chọn rồng theo tên, trả về code số nguyên
+function searchDragonCode(data)
+    local input = gg.prompt({"Nhập tên rồng:"}, {""}, {"text"})
+    if not input then return nil end
+    local searchTerm = input[1]:lower()
+    local list, codes = {}, {}
+    for _, d in ipairs(data) do
+        if d.name:lower():find(searchTerm, 1, true) then
+            table.insert(list, d.code .. " - " .. d.name)
+            table.insert(codes, d.code)
+        end
+    end
+    if #list == 0 then
+        gg.alert("Không tìm thấy rồng.")
+        return nil
+    end
+    local choice = gg.choice(list, nil, "Chọn rồng:")
+    return choice and tonumber(codes[choice]) or nil
 end
 
--- Sửa thành 1011, 1012, ...
-for i = 1, #input1Results do
-  input1Results[i].value = 1010 + i
-end
-gg.setValues(input1Results)
+-- Tìm và sửa dãy input1;-1;0:: thành 1011,1012,... rồi ẩn GG
+function handleInput1AndReplace()
+    local data = fetchDragonData()
+    if not data then return nil end
+    local input1 = searchDragonCode(data)
+    if not input1 then return nil end
 
--- Ẩn GG, chờ mở lại
-gg.setVisible(false)
-gg.alert("đã đổi code rồng ")
-
--- Chờ GG được mở lại
-while not gg.isVisible(true) do
-  gg.sleep(100)
-end
-gg.setVisible(false)
-
--- Nhập input2
-local input2Tbl = gg.prompt({"nhập lại code rồng sau đổi"})
-if not input2Tbl or not input2Tbl[1] then
-  gg.alert("đm đéo nhập sao chạy")
-  return
-end
-local input2 = tonumber(input2Tbl[1])
-
--- Lọc trong allResults các dòng có giá trị = input2 → sửa thành input1
-local updatedFromInput2 = {}
-for _, v in ipairs(allResults) do
-  if v.value == input2 then
-    v.value = input1
-    table.insert(updatedFromInput2, v)
-  end
+    gg.clearResults()
+    local searchStr = tostring(input1) .. ";-1;0::"
+    gg.searchNumber(searchStr, gg.TYPE_DWORD)
+    gg.refineNumber(tostring(input1), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("k thấy")
+        return nil
+    end
+    for i = 1, #results do
+        results[i].value = 1010 + i -- 1011, 1012,...
+    end
+    gg.setValues(results)
+    gg.setVisible(false)
+    return results, input1
 end
 
-if #updatedFromInput2 == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Khi người mở lại GG, nhập input2, lọc và sửa thành input1, copy offset
+function onGGVisible(input1)
+    local data = fetchDragonData()
+    if not data then return end
+    local input2 = searchDragonCode(data)
+    if not input2 then return end
+
+    gg.refineNumber(tostring(input2), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("đéo thấy")
+        return
+    end
+    -- Sửa tất cả giá trị input2 thành input1 ban đầu
+    for i = 1, #results do
+        results[i].value = input1
+    end
+    gg.setValues(results)
+
+    -- Tìm địa chỉ chứa input1
+    local baseEntry = nil
+    for _, r in ipairs(results) do
+        if r.value == input1 then
+            baseEntry = r
+            break
+        end
+    end
+    if not baseEntry then
+        gg.alert("đéo thăy")
+        return
+    end
+
+    gg.gotoAddress(baseEntry.address)
+
+    -- Tính địa chỉ offset theo byte (DWORD = 4 bytes)
+    local addr_base = baseEntry.address
+    local offset12_addr = addr_base + 12 * 4
+    local offset13_addr = addr_base + 13 * 4
+    local offset14_addr = addr_base + 14 * 4
+    local offset15_addr = addr_base + 15 * 4
+
+    -- Lấy giá trị offset 12
+    local val12_res = gg.getValues({{address=offset12_addr, flags=gg.TYPE_DWORD, count=1}})
+    if not val12_res or not val12_res[1] then
+        gg.alert("Không lấy được giá trị offset 12.")
+        return
+    end
+    local val12 = val12_res[1].value
+
+    -- Gán giá trị offset 12 vào offset 13,14,15
+    local setVals = {
+        {address=offset13_addr, flags=gg.TYPE_DWORD, value=val12},
+        {address=offset14_addr, flags=gg.TYPE_DWORD, value=val12},
+        {address=offset15_addr, flags=gg.TYPE_DWORD, value=val12},
+    }
+    gg.setValues(setVals)
+    gg.toast("ok r")
 end
 
-gg.setValues(updatedFromInput2)
+-- Main
+local started = false
+local input1Global = nil
 
--- Dùng địa chỉ của 1 dòng input1 vừa sửa từ input2 để làm gốc
-local baseAddr = updatedFromInput2[1].address
-
--- Lấy giá trị offset tại dòng +12 (12 * 4 = 48 byte)
-local offset12Val = gg.getValues({
-  {address = baseAddr + 12 * 4, flags = gg.TYPE_DWORD}
-})[1].value
-
--- Dán giá trị đó vào dòng 13, 14, 15
-local setOffsets = {
-  {address = baseAddr + 13 * 4, value = offset12Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 14 * 4, value = offset12Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 15 * 4, value = offset12Val, flags = gg.TYPE_DWORD}
-}
-gg.setValues(setOffsets)
-
-gg.alert("xong vô luyện skill đi chờ cc gì?")
+function main()
+    local results, input1 = handleInput1AndReplace()
+    if results then
+        started = true
+        input1Global = input1
+        gg.toast("Đã xử lý input1. Mở GG để tiếp tục thao tác input2.")
+    end
 end
+
+main()
+
+while true do
+    if gg.isVisible(true) and started then
+        gg.setVisible(false)
+        onGGVisible(input1Global)
+        started = false
+    end
+    end
+    end
 function skillhai()
 gg.alert("luyện skill 2")
 
--- Bước 1: Nhập input1
-local input1Tbl = gg.prompt({"id rồng cần luyện"})
-if not input1Tbl or not input1Tbl[1] then
-  gg.alert("k nhập sao tìm địt mẹ mày")
-  return
-end
-local input1 = tonumber(input1Tbl[1])
-
--- Bước 2: Tìm input1;-1;0::
-gg.clearResults()
-gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
-local allResults = gg.getResults(gg.getResultsCount())
-
--- Bước 3: Lọc đúng input1
-local input1Results = {}
-for _, v in ipairs(allResults) do
-  if v.value == input1 then
-    table.insert(input1Results, v)
-  end
+-- Lấy dữ liệu rồng từ trang web
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = code, name = name})
+        end
+    end
+    return #data > 0 and data or nil
 end
 
-if #input1Results == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Tìm và chọn rồng theo tên, trả về code số nguyên
+function searchDragonCode(data)
+    local input = gg.prompt({"Nhập tên rồng:"}, {""}, {"text"})
+    if not input then return nil end
+    local searchTerm = input[1]:lower()
+    local list, codes = {}, {}
+    for _, d in ipairs(data) do
+        if d.name:lower():find(searchTerm, 1, true) then
+            table.insert(list, d.code .. " - " .. d.name)
+            table.insert(codes, d.code)
+        end
+    end
+    if #list == 0 then
+        gg.alert("Không tìm thấy rồng.")
+        return nil
+    end
+    local choice = gg.choice(list, nil, "Chọn rồng:")
+    return choice and tonumber(codes[choice]) or nil
 end
 
--- Bước 4: Sửa thành 1011, 1012, ...
-for i = 1, #input1Results do
-  input1Results[i].value = 1010 + i
-end
-gg.setValues(input1Results)
+-- Tìm và sửa dãy input1;-1;0:: thành 1011,1012,... rồi ẩn GG
+function handleInput1AndReplace()
+    local data = fetchDragonData()
+    if not data then return nil end
+    local input1 = searchDragonCode(data)
+    if not input1 then return nil end
 
--- Bước 5: Ẩn GG, đợi người dùng mở lại
-gg.setVisible(false)
-gg.alert("nhập code rồng đã đổi")
-
-while not gg.isVisible(true) do
-  gg.sleep(100)
-end
-gg.setVisible(false)
-
--- Bước 6: Nhập input2
-local input2Tbl = gg.prompt({"nhập code rồng sau đổi"})
-if not input2Tbl or not input2Tbl[1] then
-  gg.alert("Bạn chưa nhập input2.")
-  return
-end
-local input2 = tonumber(input2Tbl[1])
-
--- Bước 7: Lọc lại từ allResults các dòng có giá trị = input2 → sửa thành input1
-local updatedFromInput2 = {}
-for _, v in ipairs(allResults) do
-  if v.value == input2 then
-    v.value = input1
-    table.insert(updatedFromInput2, v)
-  end
+    gg.clearResults()
+    local searchStr = tostring(input1) .. ";-1;0::"
+    gg.searchNumber(searchStr, gg.TYPE_DWORD)
+    gg.refineNumber(tostring(input1), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("k thấy")
+        return nil
+    end
+    for i = 1, #results do
+        results[i].value = 1010 + i -- 1011, 1012,...
+    end
+    gg.setValues(results)
+    gg.setVisible(false)
+    return results, input1
 end
 
-if #updatedFromInput2 == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Khi người mở lại GG, nhập input2, lọc và sửa thành input1, copy offset
+function onGGVisible(input1)
+    local data = fetchDragonData()
+    if not data then return end
+    local input2 = searchDragonCode(data)
+    if not input2 then return end
+
+    gg.refineNumber(tostring(input2), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("k thấy")
+        return
+    end
+    -- Sửa tất cả giá trị input2 thành input1 ban đầu
+    for i = 1, #results do
+        results[i].value = input1
+    end
+    gg.setValues(results)
+
+    -- Tìm địa chỉ chứa input1
+    local baseEntry = nil
+    for _, r in ipairs(results) do
+        if r.value == input1 then
+            baseEntry = r
+            break
+        end
+    end
+    if not baseEntry then
+        gg.alert("k thấy")
+        return
+    end
+
+    gg.gotoAddress(baseEntry.address)
+
+    -- Tính địa chỉ offset theo byte (DWORD = 4 bytes)
+    local addr_base = baseEntry.address
+    local offset12_addr = addr_base + 12 * 4
+    local offset13_addr = addr_base + 13 * 4
+    local offset14_addr = addr_base + 14 * 4
+    local offset15_addr = addr_base + 15 * 4
+
+    -- Lấy giá trị offset 13
+    local val13_res = gg.getValues({{address=offset13_addr, flags=gg.TYPE_DWORD, count=1}})
+    if not val13_res or not val13_res[1] then
+        gg.alert("k thấy")
+        return
+    end
+    local val13 = val13_res[1].value
+
+    -- Gán giá trị offset 13 vào offset 12,14,15
+    local setVals = {
+        {address=offset12_addr, flags=gg.TYPE_DWORD, value=val13},
+        {address=offset14_addr, flags=gg.TYPE_DWORD, value=val13},
+        {address=offset15_addr, flags=gg.TYPE_DWORD, value=val13},
+    }
+    gg.setValues(setVals)
+    gg.toast("xong")
 end
 
-gg.setValues(updatedFromInput2)
+-- Main
+local started = false
+local input1Global = nil
 
--- Bước 8: Dùng dòng đầu tiên vừa sửa để GOTO
-local baseAddr = updatedFromInput2[1].address
+function main()
+    local results, input1 = handleInput1AndReplace()
+    if results then
+        started = true
+        input1Global = input1
+        gg.toast("xong")
+    end
+end
 
--- Bước 9: Lấy giá trị offset +13 (13 * 4 = 52 byte)
-local offset13Val = gg.getValues({
-  {address = baseAddr + 13 * 4, flags = gg.TYPE_DWORD}
-})[1].value
+main()
 
--- Bước 10: Dán vào dòng offset 12, 14, 15
-local setOffsets = {
-  {address = baseAddr + 12 * 4, value = offset13Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 14 * 4, value = offset13Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 15 * 4, value = offset13Val, flags = gg.TYPE_DWORD}
-}
-gg.setValues(setOffsets)
-
-gg.alert("xong")
+while true do
+    if gg.isVisible(true) and started then
+        gg.setVisible(false)
+        onGGVisible(input1Global)
+        started = false
+    end
+end
 end
 function skillba()
 gg.alert("skill 3")
 
--- Bước 1: Nhập input1
-local input1Tbl = gg.prompt({"code rồng cần luyện"})
-if not input1Tbl or not input1Tbl[1] then
-  gg.alert("đéo nhập à?")
-  return
-end
-local input1 = tonumber(input1Tbl[1])
-
--- Bước 2: Tìm input1;-1;0::
-gg.clearResults()
-gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
-local allResults = gg.getResults(gg.getResultsCount())
-
--- Bước 3: Lọc đúng input1
-local input1Results = {}
-for _, v in ipairs(allResults) do
-  if v.value == input1 then
-    table.insert(input1Results, v)
-  end
+-- Lấy dữ liệu rồng từ trang web
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = code, name = name})
+        end
+    end
+    return #data > 0 and data or nil
 end
 
-if #input1Results == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Tìm và chọn rồng theo tên, trả về code số nguyên
+function searchDragonCode(data)
+    local input = gg.prompt({"Nhập tên rồng:"}, {""}, {"text"})
+    if not input then return nil end
+    local searchTerm = input[1]:lower()
+    local list, codes = {}, {}
+    for _, d in ipairs(data) do
+        if d.name:lower():find(searchTerm, 1, true) then
+            table.insert(list, d.code .. " - " .. d.name)
+            table.insert(codes, d.code)
+        end
+    end
+    if #list == 0 then
+        gg.alert("Không tìm thấy rồng.")
+        return nil
+    end
+    local choice = gg.choice(list, nil, "Chọn rồng:")
+    return choice and tonumber(codes[choice]) or nil
 end
 
--- Bước 4: Sửa thành 1011, 1012, ...
-for i = 1, #input1Results do
-  input1Results[i].value = 1010 + i
-end
-gg.setValues(input1Results)
+-- Tìm và sửa dãy input1;-1;0:: thành 1011,1012,... rồi ẩn GG
+function handleInput1AndReplace()
+    local data = fetchDragonData()
+    if not data then return nil end
+    local input1 = searchDragonCode(data)
+    if not input1 then return nil end
 
--- Bước 5: Ẩn GG, đợi người dùng mở lại
-gg.setVisible(false)
-gg.alert("đã thay code rồng")
-
-while not gg.isVisible(true) do
-  gg.sleep(100)
-end
-gg.setVisible(false)
-
--- Bước 6: Nhập input2
-local input2Tbl = gg.prompt({"code rồng sau khi thay"})
-if not input2Tbl or not input2Tbl[1] then
-  gg.alert("đéo nhập ăn cc à")
-  return
-end
-local input2 = tonumber(input2Tbl[1])
-
--- Bước 7: Lọc lại từ allResults các dòng có giá trị = input2 → sửa thành input1
-local updatedFromInput2 = {}
-for _, v in ipairs(allResults) do
-  if v.value == input2 then
-    v.value = input1
-    table.insert(updatedFromInput2, v)
-  end
+    gg.clearResults()
+    local searchStr = tostring(input1) .. ";-1;0::"
+    gg.searchNumber(searchStr, gg.TYPE_DWORD)
+    gg.refineNumber(tostring(input1), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("Không tìm thấy chuỗi cần tìm với input1!")
+        return nil
+    end
+    for i = 1, #results do
+        results[i].value = 1010 + i -- 1011, 1012,...
+    end
+    gg.setValues(results)
+    gg.setVisible(false)
+    return results, input1
 end
 
-if #updatedFromInput2 == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Khi người mở lại GG, nhập input2, lọc và sửa thành input1, copy offset
+function onGGVisible(input1)
+    local data = fetchDragonData()
+    if not data then return end
+    local input2 = searchDragonCode(data)
+    if not input2 then return end
+
+    gg.refineNumber(tostring(input2), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("Không tìm thấy input2 trong bộ nhớ!")
+        return
+    end
+    -- Sửa tất cả giá trị input2 thành input1 ban đầu
+    for i = 1, #results do
+        results[i].value = input1
+    end
+    gg.setValues(results)
+
+    -- Tìm địa chỉ chứa input1
+    local baseEntry = nil
+    for _, r in ipairs(results) do
+        if r.value == input1 then
+            baseEntry = r
+            break
+        end
+    end
+    if not baseEntry then
+        gg.alert("Không tìm thấy địa chỉ chứa input1!")
+        return
+    end
+
+    gg.gotoAddress(baseEntry.address)
+
+    -- Tính địa chỉ offset theo byte (DWORD = 4 bytes)
+    local addr_base = baseEntry.address
+    local offset12_addr = addr_base + 12 * 4
+    local offset13_addr = addr_base + 13 * 4
+    local offset14_addr = addr_base + 14 * 4
+    local offset15_addr = addr_base + 15 * 4
+
+    -- Lấy giá trị offset 14
+    local val14_res = gg.getValues({{address=offset14_addr, flags=gg.TYPE_DWORD, count=1}})
+    if not val14_res or not val14_res[1] then
+        gg.alert("Không lấy được giá trị offset 14.")
+        return
+    end
+    local val14 = val14_res[1].value
+
+    -- Gán giá trị offset 14 vào offset 12,13,15
+    local setVals = {
+        {address=offset12_addr, flags=gg.TYPE_DWORD, value=val14},
+        {address=offset13_addr, flags=gg.TYPE_DWORD, value=val14},
+        {address=offset15_addr, flags=gg.TYPE_DWORD, value=val14},
+    }
+    gg.setValues(setVals)
+    gg.toast("Đã sao chép offset 14 vào 12, 13, 15.")
 end
 
-gg.setValues(updatedFromInput2)
+-- Main
+local started = false
+local input1Global = nil
 
--- Bước 8: Dùng dòng đầu tiên vừa sửa để GOTO
-local baseAddr = updatedFromInput2[1].address
+function main()
+    local results, input1 = handleInput1AndReplace()
+    if results then
+        started = true
+        input1Global = input1
+        gg.toast("Đã xử lý input1. Mở GG để tiếp tục thao tác input2.")
+    end
+end
 
--- Bước 9: Lấy giá trị offset +14 (14 * 4 = 56 byte)
-local offset14Val = gg.getValues({
-  {address = baseAddr + 14 * 4, flags = gg.TYPE_DWORD}
-})[1].value
+main()
 
--- Bước 10: Dán vào dòng offset 12, 13, 15
-local setOffsets = {
-  {address = baseAddr + 12 * 4, value = offset14Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 13 * 4, value = offset14Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 15 * 4, value = offset14Val, flags = gg.TYPE_DWORD}
-}
-gg.setValues(setOffsets)
-
-gg.alert("ngu xong r")
+while true do
+    if gg.isVisible(true) and started then
+        gg.setVisible(false)
+        onGGVisible(input1Global)
+        started = false
+    end
+end
 end
 function skillbon()
 gg.alert("skill 4")
 
--- Nhập input1
-local input1Tbl = gg.prompt({"code rồng cần luyện"})
-if not input1Tbl or not input1Tbl[1] then
-  gg.alert("đéo nhập sao luyện.")
-  return
-end
-local input1 = tonumber(input1Tbl[1])
-
--- Tìm input1;-1;0::
-gg.clearResults()
-gg.searchNumber(input1 .. ";-1;0::", gg.TYPE_DWORD)
-local allResults = gg.getResults(gg.getResultsCount())
-
--- Lọc đúng input1
-local input1Results = {}
-for _, v in ipairs(allResults) do
-  if v.value == input1 then
-    table.insert(input1Results, v)
-  end
+-- Lấy dữ liệu rồng từ trang web
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = code, name = name})
+        end
+    end
+    return #data > 0 and data or nil
 end
 
-if #input1Results == 0 then
-  gg.alert("đéo thấy")
-  return
+-- Tìm và chọn rồng theo tên, trả về code số nguyên
+function searchDragonCode(data)
+    local input = gg.prompt({"Nhập tên rồng:"}, {""}, {"text"})
+    if not input then return nil end
+    local searchTerm = input[1]:lower()
+    local list, codes = {}, {}
+    for _, d in ipairs(data) do
+        if d.name:lower():find(searchTerm, 1, true) then
+            table.insert(list, d.code .. " - " .. d.name)
+            table.insert(codes, d.code)
+        end
+    end
+    if #list == 0 then
+        gg.alert("Không tìm thấy rồng.")
+        return nil
+    end
+    local choice = gg.choice(list, nil, "Chọn rồng:")
+    return choice and tonumber(codes[choice]) or nil
 end
 
--- Sửa thành 1011, 1012, ...
-for i = 1, #input1Results do
-  input1Results[i].value = 1010 + i
-end
-gg.setValues(input1Results)
+-- Tìm và sửa dãy input1;-1;0:: thành 1011,1012,... rồi ẩn GG
+function handleInput1AndReplace()
+    local data = fetchDragonData()
+    if not data then return nil end
+    local input1 = searchDragonCode(data)
+    if not input1 then return nil end
 
--- Ẩn GG → chờ người dùng nhấn lại biểu tượng
-gg.setVisible(false)
-gg.alert("đã thay code")
-
-while not gg.isVisible(true) do
-  gg.sleep(100)
-end
-gg.setVisible(false)
-
--- Nhập input2
-local input2Tbl = gg.prompt({"code sau sửa:"})
-if not input2Tbl or not input2Tbl[1] then
-  gg.alert("Bạn chưa nhập input2.")
-  return
-end
-local input2 = tonumber(input2Tbl[1])
-
--- Lọc từ kết quả ban đầu → các dòng có value = input2 → sửa thành input1
-local updatedFromInput2 = {}
-for _, v in ipairs(allResults) do
-  if v.value == input2 then
-    v.value = input1
-    table.insert(updatedFromInput2, v)
-  end
+    gg.clearResults()
+    local searchStr = tostring(input1) .. ";-1;0::"
+    gg.searchNumber(searchStr, gg.TYPE_DWORD)
+    gg.refineNumber(tostring(input1), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("Không tìm thấy chuỗi cần tìm với input1!")
+        return nil
+    end
+    for i = 1, #results do
+        results[i].value = 1010 + i -- 1011, 1012,...
+    end
+    gg.setValues(results)
+    gg.setVisible(false)
+    return results, input1
 end
 
-if #updatedFromInput2 == 0 then
-  gg.alert("đéo có")
-  return
+-- Khi người mở lại GG, nhập input2, lọc và sửa thành input1, copy offset
+function onGGVisible(input1)
+    local data = fetchDragonData()
+    if not data then return end
+    local input2 = searchDragonCode(data)
+    if not input2 then return end
+
+    gg.refineNumber(tostring(input2), gg.TYPE_DWORD)
+    local results = gg.getResults(500)
+    if #results == 0 then
+        gg.alert("Không tìm thấy input2 trong bộ nhớ!")
+        return
+    end
+    -- Sửa tất cả giá trị input2 thành input1 ban đầu
+    for i = 1, #results do
+        results[i].value = input1
+    end
+    gg.setValues(results)
+
+    -- Tìm địa chỉ chứa input1
+    local baseEntry = nil
+    for _, r in ipairs(results) do
+        if r.value == input1 then
+            baseEntry = r
+            break
+        end
+    end
+    if not baseEntry then
+        gg.alert("Không tìm thấy địa chỉ chứa input1!")
+        return
+    end
+
+    gg.gotoAddress(baseEntry.address)
+
+    -- Tính địa chỉ offset theo byte (DWORD = 4 bytes)
+    local addr_base = baseEntry.address
+    local offset12_addr = addr_base + 12 * 4
+    local offset13_addr = addr_base + 13 * 4
+    local offset14_addr = addr_base + 14 * 4
+    local offset15_addr = addr_base + 15 * 4
+
+    -- Lấy giá trị offset 15
+    local val15_res = gg.getValues({{address=offset15_addr, flags=gg.TYPE_DWORD, count=1}})
+    if not val15_res or not val15_res[1] then
+        gg.alert("Không lấy được giá trị offset 15.")
+        return
+    end
+    local val15 = val15_res[1].value
+
+    -- Gán giá trị offset 15 vào offset 12,13,14
+    local setVals = {
+        {address=offset12_addr, flags=gg.TYPE_DWORD, value=val15},
+        {address=offset13_addr, flags=gg.TYPE_DWORD, value=val15},
+        {address=offset14_addr, flags=gg.TYPE_DWORD, value=val15},
+    }
+    gg.setValues(setVals)
+    gg.toast("Đã sao chép offset 15 vào 12, 13, 14.")
 end
 
-gg.setValues(updatedFromInput2)
+-- Main
+local started = false
+local input1Global = nil
 
--- Goto dòng input1 vừa sửa từ input2
-local baseAddr = updatedFromInput2[1].address
+function main()
+    local results, input1 = handleInput1AndReplace()
+    if results then
+        started = true
+        input1Global = input1
+        gg.toast("Đã xử lý input1. Mở GG để tiếp tục thao tác input2.")
+    end
+end
 
--- Lấy giá trị tại offset +15
-local offset15Val = gg.getValues({
-  {address = baseAddr + 15 * 4, flags = gg.TYPE_DWORD}
-})[1].value
+main()
 
--- Dán vào offset 12, 13, 14
-local setOffsets = {
-  {address = baseAddr + 12 * 4, value = offset15Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 13 * 4, value = offset15Val, flags = gg.TYPE_DWORD},
-  {address = baseAddr + 14 * 4, value = offset15Val, flags = gg.TYPE_DWORD}
-}
-gg.setValues(setOffsets)
-
-gg.alert("ok r.")
+while true do
+    if gg.isVisible(true) and started then
+        gg.setVisible(false)
+        onGGVisible(input1Global)
+        started = false
+    end
+end
   end
 -- Chạy menu
 while true do
@@ -565,4 +842,4 @@ while true do
     gg.setVisible(false)
     mainMenu()
   end
-end
+  end
