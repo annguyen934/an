@@ -1,4 +1,4 @@
-gg.alert("Script bắt đầu!")
+gg.alert("Script bắt đ ầu!")
 local dragons = {
   {9900, "Autumn Dragon"},
   {3381, "High Cloaked Critical"},
