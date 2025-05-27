@@ -2117,36 +2117,24 @@ local dragons = {
   {1001, "Firebird Dragon"},
   {1000, "Nature Dragon"},
 }
-local function filterAndChoose(dragonList, title)
+
+local function choiceDragon(title)
   local names = {}
-  for i, d in ipairs(dragonList) do
+  for i, d in ipairs(dragons) do
     names[i] = d[1] .. " - " .. d[2]
   end
-  while true do
-    local choice = gg.choice(names, nil, title)
-    if choice == nil then
-      gg.toast("Bạn đã hủy chọn.")
-      os.exit()
-    end
-    return dragonList[choice][1], dragonList[choice][2]
+  local choice = gg.choice(names, nil, title)
+  if choice == nil then
+    gg.toast("Đã hủy")
+    os.exit()
   end
+  return dragons[choice][1], dragons[choice][2]
 end
 
--- Chuyển chuỗi tìm kiếm thành mảng byte (dùng để tìm theo TYPE_BYTE)
-local function strToByteArray(str)
-  local bytes = {}
-  for i = 1, #str do
-    bytes[i] = string.byte(str, i)
-  end
-  return bytes
-end
-
--- Tìm kiếm chuỗi dạng input1;-1;0::
-local function searchPattern(input1)
-  local patternStr = tostring(input1) .. ";-1;0::"
-  local bytes = strToByteArray(patternStr)
+-- Tìm kiếm theo số input1 dword
+local function searchInput1(input1)
   gg.clearResults()
-  gg.searchNumber(bytes, gg.TYPE_BYTE)
+  gg.searchNumber(input1, gg.TYPE_DWORD)
   local results = gg.getResults(100)
   if #results == 0 then
     gg.alert("Không tìm thấy giá trị với input1 = " .. input1)
@@ -2155,53 +2143,42 @@ local function searchPattern(input1)
   return results
 end
 
--- Sửa các giá trị input1 thành 1011 trở đi
+-- Sửa giá trị trong results bắt đầu từ 1011 tăng dần
 local function patchResults(results)
   for i, v in ipairs(results) do
-    v.value = 1010 + i -- tăng dần từ 1011
+    v.value = 1010 + i
     v.freeze = false
   end
   gg.setValues(results)
 end
 
--- Thực hiện sao chép offset (offset tính theo địa chỉ mảng kết quả)
+-- Copy giá trị offset +12 và paste vào offset +13,14,15
 local function copyPasteOffsets(results)
-  if #results == 0 then return end
   local baseAddr = results[1].address
+  local offset12 = baseAddr + 12 * 4
+  local val = gg.getValues({{address=offset12,flags=gg.TYPE_DWORD}})[1].value
 
-  -- Copy giá trị tại offset +12
-  local copyAddr = baseAddr + 12 * 4 -- 4 bytes cho DWORD
-  local copyValue = gg.getValues({{address = copyAddr, flags = gg.TYPE_DWORD}})[1].value
-
-  -- Dán giá trị copy vào offset +13, +14, +15
-  local pasteAddrs = {
-    {address = baseAddr + 13 * 4, flags = gg.TYPE_DWORD, value = copyValue},
-    {address = baseAddr + 14 * 4, flags = gg.TYPE_DWORD, value = copyValue},
-    {address = baseAddr + 15 * 4, flags = gg.TYPE_DWORD, value = copyValue},
+  local paste = {
+    {address=baseAddr + 13 * 4, flags=gg.TYPE_DWORD, value=val},
+    {address=baseAddr + 14 * 4, flags=gg.TYPE_DWORD, value=val},
+    {address=baseAddr + 15 * 4, flags=gg.TYPE_DWORD, value=val},
   }
-  gg.setValues(pasteAddrs)
+  gg.setValues(paste)
 end
 
 -- MAIN
+local input1, name1 = choiceDragon("Chọn rồng (input1)")
+gg.toast("Chọn: "..name1.." ("..input1..")")
 
--- Bước 1: Chọn rồng lần 1
-local input1, name1 = filterAndChoose(dragons, "Chọn rồng đầu tiên (input1)")
-gg.toast("Bạn chọn: " .. name1 .. " (" .. input1 .. ")")
-
--- Bước 2: Tìm kiếm pattern input1;-1;0::
-local results = searchPattern(input1)
-
--- Bước 3: Sửa giá trị input1 thành 1011, 1012, ...
+local results = searchInput1(input1)
 patchResults(results)
 
--- Bước 4: Ẩn GG
 gg.invisible()
 
--- Bước 5: Chọn rồng lần 2 (input2)
-local input2, name2 = filterAndChoose(dragons, "Chọn rồng thứ hai (input2)")
-gg.toast("Bạn chọn: " .. name2 .. " (" .. input2 .. ")")
+local input2, name2 = choiceDragon("Chọn rồng (input2)")
+gg.toast("Chọn: "..name2.." ("..input2..")")
 
--- Bước 6: Lọc lại theo giá trị input2 đã sửa (đã đổi thành input1)
+-- Tìm input2 đã sửa (các giá trị từ 1011+)
 gg.clearResults()
 gg.searchNumber(input2, gg.TYPE_DWORD)
 local results2 = gg.getResults(100)
@@ -2210,20 +2187,17 @@ if #results2 == 0 then
   os.exit()
 end
 
--- Bước 7: Sửa input2 thành input1 (tức đổi giá trị lại thành input1)
-for i, v in ipairs(results2) do
+-- Sửa lại input2 thành input1
+for i,v in ipairs(results2) do
   v.value = input1
   v.freeze = false
 end
 gg.setValues(results2)
 
--- Bước 8: GOTO tới giá trị input1 (địa chỉ đầu tiên của results)
-if #results > 0 then
-  gg.setVisible(false)
-  gg.gotoAddress(results[1].address)
-end
+-- Goto tới địa chỉ đầu tiên của input1
+gg.gotoAddress(results[1].address)
 
--- Bước 9: Copy dòng offset +12 rồi dán vào offset +13, +14, +15
+-- Copy và paste giá trị offset
 copyPasteOffsets(results)
 
 gg.toast("Hoàn thành!")
