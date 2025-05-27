@@ -1,29 +1,9 @@
+-- Link raw chứa danh sách user hợp lệ (keys.json)
 local URL_KEYS = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/keys.json"
+-- Link raw script sẽ chạy nếu user hợp lệ
 local URL_SCRIPT = "https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/an"
 
-local STORAGE_PATH = gg.getFilePath() .. "/saved_username.txt"
-
--- Hàm đọc tên đăng nhập đã lưu
-local function readSavedUsername()
-    local file = io.open(STORAGE_PATH, "r")
-    if file then
-        local username = file:read("*l")
-        file:close()
-        return username
-    end
-    return nil
-end
-
--- Hàm lưu tên đăng nhập vào file
-local function saveUsername(username)
-    local file = io.open(STORAGE_PATH, "w+")
-    if file then
-        file:write(username)
-        file:close()
-    end
-end
-
--- Hàm decode JSON đơn giản cho bảng dạng { "user1": true, "user2": true }
+-- Hàm parse JSON đơn giản (chỉ dùng cho JSON đơn giản kiểu { "user": true, ... })
 local function simpleJsonDecode(str)
     local f, err = load("return " .. str:gsub("null", "nil"))
     if not f then return nil, err end
@@ -31,55 +11,35 @@ local function simpleJsonDecode(str)
     if ok then return result else return nil, result end
 end
 
--- Lấy dữ liệu JSON từ URL
+-- Hàm tải file JSON user từ GitHub
 local function getUserList()
     local response = gg.makeRequest(URL_KEYS)
     if response.status == 200 then
-        local jsonTbl, err = simpleJsonDecode(response.content)
-        if not jsonTbl then
+        local userList, err = simpleJsonDecode(response.content)
+        if not userList then
             gg.alert("Lỗi phân tích JSON: " .. tostring(err))
             return nil
         end
-        return jsonTbl
+        return userList
     else
-        gg.alert("Lỗi tải file keys.json: HTTP " .. tostring(response.status))
+        gg.alert("Lỗi tải keys.json: HTTP " .. tostring(response.status))
         return nil
     end
 end
 
--- Kiểm tra user có trong danh sách
+-- Hàm kiểm tra tên đăng nhập hợp lệ
 local function isUserValid(userList, username)
     return userList[username] == true
 end
 
--- Lấy tên đăng nhập (ưu tiên dùng tên đã lưu)
+-- Hàm yêu cầu nhập tên đăng nhập
 local function getUsername()
-    local saved = readSavedUsername()
-    if saved then
-        local choose = gg.choice({"Dùng tên đăng nhập đã lưu: "..saved, "Nhập tên đăng nhập mới", "Thoát"}, nil, "Chọn phương án")
-        if choose == 1 then
-            return saved
-        elseif choose == 2 then
-            local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
-            if input and input[1] and input[1] ~= "" then
-                saveUsername(input[1])
-                return input[1]
-            else
-                gg.alert("Tên đăng nhập không hợp lệ!")
-                os.exit()
-            end
-        else
-            os.exit()
-        end
+    local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
+    if input and input[1] and input[1] ~= "" then
+        return input[1]
     else
-        local input = gg.prompt({"Nhập tên đăng nhập:"}, {""}, {"text"})
-        if input and input[1] and input[1] ~= "" then
-            saveUsername(input[1])
-            return input[1]
-        else
-            gg.alert("Tên đăng nhập không hợp lệ!")
-            os.exit()
-        end
+        gg.alert("Bạn chưa nhập tên đăng nhập!")
+        os.exit()
     end
 end
 
@@ -89,7 +49,7 @@ local function main()
     gg.toast("Đang kiểm tra tên đăng nhập...")
     local userList = getUserList()
     if not userList then
-        gg.alert("Không thể lấy danh sách tên đăng nhập!")
+        gg.alert("Không thể lấy danh sách đăng nhập!")
         os.exit()
     end
 
