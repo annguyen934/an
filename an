@@ -114,7 +114,7 @@ function luyenrank()
   local pattern = table.concat(input, ";") .. "::" -- Gộp thành chuỗi tìm kiếm
   gg.searchNumber(pattern, gg.TYPE_DWORD)
   gg.getResults(5000)
-            gg.editAll("1011;1;0;1011;1;0;3266;3266;5", gg.TYPE_DWORD)
+            gg.editAll("1011;1;0;1011;1;0;2644;3266;5", gg.TYPE_DWORD)
   local ketQua = gg.getResultsCount()
 
   if ketQua > 0 then
