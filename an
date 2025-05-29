@@ -44,89 +44,284 @@ gg.setRanges(gg.REGION_C_ALLOC)
             end
 
 function arena()
-  local input = gg.prompt(
-    {
-      "code rồng1:",
-      "lev rồng 1:",
-      "sao rồng 1:",
-      "code rồng 2:",
-      "lev rồng 2:",
-      "sao rồng 2:",
-      "code rồng 3:",
-      "lev rồng 3:",
-      "sao rồng 3:"
-    },
-    nil,
-    {
-      "number", "number", "number",
-      "number", "number", "number",
-      "number", "number", "number"
-    }
-  )
+progress = progress or 1
+inputs = inputs or {}
 
-  if input == nil then
-    gg.toast("ngu")
-    return
+function fetchDragonData()
+    local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+    if not response or not response.content then
+        gg.alert("Không tải được dữ liệu rồng!")
+        return nil
+    end
+    local data = {}
+    for line in response.content:gmatch("[^\r\n]+") do
+        local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+        if code and name then
+            table.insert(data, {code = tonumber(code), name = name})
+        end
+    end
+    return data
+end
+
+function searchDragon(data)
+    while true do
+        local input = gg.prompt({"🔍 Nhập tên rồng để tìm:"}, {""}, {"text"})
+        if not input then return nil end
+        local searchTerm = input[1]:lower()
+        local choices, codes = {}, {}
+        for _, d in ipairs(data) do
+            if d.name:lower():find(searchTerm, 1, true) then
+                table.insert(choices, d.code .. " - " .. d.name)
+                table.insert(codes, d.code)
+            end
+        end
+        if #choices == 0 then
+            gg.alert("Không tìm thấy rồng.")
+        else
+            local sel = gg.choice(choices, nil, "🟢 Chọn rồng:")
+            if sel then return tonumber(codes[sel]) end
+        end
+    end
+end
+
+function inputNumber(label)
+    while true do
+        local input = gg.prompt({label}, {""}, {"number"})
+        if not input then return nil end
+        local num = tonumber(input[1])
+        if num then return num end
+        gg.alert("Vui lòng nhập số hợp lệ.")
+    end
+end
+
+function collectInputs()
+    local data = fetchDragonData()
+    if not data then return end
+
+    while progress <= 6 do
+        if progress % 2 == 1 then
+            local dragon = searchDragon(data)
+            if dragon then
+                inputs[progress] = dragon
+                progress = progress + 1
+            else
+                return
+            end
+        else
+            local number = inputNumber("Nhập số #" .. progress .. ":")
+            if number then
+                inputs[progress] = number
+                progress = progress + 1
+            else
+                return
+            end
+        end
+    end
+end
+
+function applyChanges()
+    local search = table.concat(inputs, ";") .. "::"
+    gg.clearResults()
+    gg.searchNumber(search, gg.TYPE_DWORD)
+    local results = gg.getResults(1000)
+    if #results < 6 then
+        gg.alert("Không tìm thấy đủ kết quả.")
+        return
+    end
+
+    for i = 0, #results - 1, 6 do
+        local group = {}
+        for j = 0, 5 do
+            local idx = i + j + 1
+            if results[idx] then
+                table.insert(group, {
+                    address = results[idx].address,
+                    flags = gg.TYPE_DWORD,
+                    value = (j % 2 == 0) and 1011 or 1,
+                    freeze = true
+                })
+            end
+        end
+        gg.addListItems(group)
+    end
+
+    gg.toast("✅ Đã sửa và freeze tất cả.")
+end
+
+-- Bắt đầu vòng lặp giám sát GG
+gg.toast("Script bắt đầu. Mở GG để nhập dữ liệu.")
+while true do
+    if gg.isVisible(true) then
+        gg.setVisible(false)
+        if progress <= 6 then
+            collectInputs()
+        end
+        if progress > 6 then
+            applyChanges()
+            gg.alert("Hoàn thành. Mở lại GG để chạy lại.")
+            -- Nếu muốn chạy lại thì reset:
+            progress = 1
+            inputs = {}
+        end
+    end
+    gg.sleep(100)
+end
+end
+function luyenrank()
+local state = {
+  step = 1,
+  input1 = nil, input2 = nil, input3 = nil,
+  input4 = nil, input5 = nil, input6 = nil,
+  input7 = nil, input8 = nil, input9 = nil,
+  input10 = nil
+}
+
+function fetchDragonData()
+  local response = gg.makeRequest("https://raw.githubusercontent.com/annguyen934/an/refs/heads/main/dsrong")
+  if not response or not response.content then
+    gg.alert("Không tải được dữ liệu rồng!")
+    return nil
+  end
+  local data = {}
+  for line in response.content:gmatch("[^\r\n]+") do
+    local code, name = line:match("^(%d+)%s*%-*%s*(.+)$")
+    if code and name then
+      table.insert(data, {code = tonumber(code), name = name})
+    end
+  end
+  return data
+end
+
+function searchAndChooseDragon()
+  local data = fetchDragonData()
+  if not data then return nil end
+  local input = gg.prompt({"rồng:"},{""},{"text"},{"rồng2 :"},{""},{"text"},{"rồng3 :"},{""},{"text"},{"rồng đổi :"},{""},{"text"})
+  if not input then return nil end
+
+  local searchTerm = input[1]:lower()
+  local filtered, codes = {}, {}
+  for _, d in ipairs(data) do
+    if d.name:lower():find(searchTerm, 1, true) then
+      table.insert(filtered, d.code .. " - " .. d.name)
+      table.insert(codes, d.code)
+    end
   end
 
-  local pattern = table.concat(input, ";") .. "::" -- Gộp thành chuỗi tìm kiếm
-  gg.searchNumber(pattern, gg.TYPE_DWORD)
-  gg.getResults(5000)
-            gg.editAll("1011;1;0;1011;1;0;1011;1;0", gg.TYPE_DWORD)
-  local ketQua = gg.getResultsCount()
+  if #filtered == 0 then
+    gg.alert("Không tìm thấy rồng phù hợp.")
+    return nil
+  end
 
-  if ketQua > 0 then
-    gg.toast("Đã tìm thấy " .. ketQua .. " kết quả.")
+  local choice = gg.choice(filtered, nil, "Chọn rồng:")
+  return choice and tonumber(codes[choice]) or nil
+end
+
+function doSearchAndEdit()
+  -- Tạo chuỗi tìm kiếm dạng: "input1;input2;input3;input4;input5;input6;input7;input8;input9::"
+  local searchString = string.format(
+    "%d;%d;%d;%d;%d;%d;%d;%d;%d::",
+    state.input1, state.input2, state.input3,
+    state.input4, state.input5, state.input6,
+    state.input7, state.input8, state.input9
+  )
+
+  gg.clearResults()
+  gg.searchNumber(searchString, gg.TYPE_DWORD)
+  local results = gg.getResults(9)
+  if #results == 9 then
+    -- Giá trị sửa thành: 1011;1;0;1011;1;0;input10;3266;5
+    local newValues = {
+      1011, 1, 0,
+      1011, 1, 0,
+      state.input10 or 0, 3266, 5
+    }
+    for i = 1, 9 do
+      results[i].value = newValues[i]
+    end
+    gg.setValues(results)
+    gg.alert("Đã thay đổi và freeze thành công!")
   else
-    gg.alert("đéo tìm thấy mẹ gì")
-    gg.getResults(5000)
-            gg.editAll("1011;1;0;1011;1;0;1011;1;0", gg.TYPE_DWORD)
-            gg.clearResults()
+    gg.alert("Không tìm thấy đủ 9 giá trị!")
   end
 end
 
-function luyenrank()
-  local input = gg.prompt(
-    {
-      "code rồng1:",
-      "lev rồng 1:",
-      "sao rồng 1:",
-      "code rồng 2:",
-      "lev rồng 2:",
-      "sao rồng 2:",
-      "code rồng 3:",
-      "lev rồng 3:",
-      "sao rồng 3:"
-    },
-    nil,
-    {
-      "number", "number", "number",
-      "number", "number", "number",
-      "number", "number", "number"
-    }
-  )
+function runStep()
+  while true do
+    if state.step == 1 then
+      local val = searchAndChooseDragon()
+      if val then
+        state.input1 = val
+        state.step = 2
+      else return end
 
-  if input == nil then
-    gg.toast("ngu")
-    return
+    elseif state.step == 2 then
+      local input = gg.prompt({"lev rồng 1 (số)", "sao rồng1 (số)"}, nil, {"number", "number"})
+      if input then
+        state.input2 = tonumber(input[1])
+        state.input3 = tonumber(input[2])
+        state.step = 3
+      else return end
+
+    elseif state.step == 3 then
+      local val = searchAndChooseDragon()
+      if val then
+        state.input4 = val
+        state.step = 4
+      else return end
+
+    elseif state.step == 4 then
+      local input = gg.prompt({"lev rồng 2 (số)", "sao rồng 2 (số)"}, nil, {"number", "number"})
+      if input then
+        state.input5 = tonumber(input[1])
+        state.input6 = tonumber(input[2])
+        state.step = 5
+      else return end
+
+    elseif state.step == 5 then
+      local val = searchAndChooseDragon()
+      if val then
+        state.input7 = val
+        state.step = 6
+      else return end
+
+    elseif state.step == 6 then
+      local input = gg.prompt({"lev rồng 3 (số)", "sao rồng 3 (số)"}, nil, {"number", "number"})
+      if input then
+        state.input8 = tonumber(input[1])
+        state.input9 = tonumber(input[2])
+        state.step = 7
+      else return end
+
+    elseif state.step == 7 then
+      local val = searchAndChooseDragon()
+      if val then
+        state.input10 = val
+        state.step = 8
+      else return end
+
+    elseif state.step == 8 then
+      doSearchAndEdit()
+      state.step = 999
+      return
+    else
+      return
+    end
   end
+end
 
-  local pattern = table.concat(input, ";") .. "::" -- Gộp thành chuỗi tìm kiếm
-  gg.searchNumber(pattern, gg.TYPE_DWORD)
-  gg.getResults(5000)
-            gg.editAll("1011;1;0;1011;1;0;2644;3266;5", gg.TYPE_DWORD)
-  local ketQua = gg.getResultsCount()
+gg.toast("Khởi động script. Mở lại GG để tiếp tục nếu thoát giữa chừng.")
 
-  if ketQua > 0 then
-    gg.toast("Đã tìm thấy " .. ketQua .. " kết quả.")
-  else
-    gg.alert("đéo tìm thấy mẹ gì")
-    gg.getResults(5000)
-            gg.editAll("1011;1;0;1011;1;0;3266;3266;5", gg.TYPE_DWORD)
-            gg.clearResults()
+while true do
+  if gg.isVisible(true) then
+    gg.setVisible(false)
+    if state.step < 999 then
+      runStep()
+    else
+      gg.toast("Script đã hoàn thành!")
+    end
   end
-  end
-
+end
+end
 function rescue()
 gg.clearResults()
     gg.setRanges(gg.REGION_C_ALLOC | gg.REGION_ANONYMOUS)
