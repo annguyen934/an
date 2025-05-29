@@ -7,7 +7,7 @@ function mainMenu()
     "5.hack lv rong",
     "6.luyện skill",
     "7. Thoát"
-  }, nil, "=== bố an vĩ đại vcl ===")
+  }, nil, "=== bố an vĩ đại vcl đm thằng bình gay thằng việt gay===")
 
   if choices == 1 then
     antireload()
