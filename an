@@ -6,8 +6,9 @@ function mainMenu()
     "4. ez resuce",
     "5.hack lv rong",
     "6.luyện skill",
-    "7. Thoát"
-  }, nil, "=== bố an vĩ đại vcl đm thằng bình gay thằng việt gay===")
+    "7.heroicskip",
+    "8. Thoát"
+  }, nil, "=== bố an vĩ đại vcl ===")
 
   if choices == 1 then
     antireload()
@@ -21,7 +22,9 @@ function mainMenu()
     levr()
     elseif choices == 6 then
     luyensk()
-  elseif choices == 7 then
+    elseif choices == 7 then
+    TimeJump()
+  elseif choices == 8 then
     os.exit()
   else
     gg.toast("nguu")
@@ -166,6 +169,85 @@ while true do
     end
     gg.sleep(100)
 end
+end
+function TimeJump()
+-- Hàm No Restart
+function TimeJumpFunc()
+  gg.setRanges(gg.REGION_CODE_APP)
+  gg.searchNumber("Q 'error'", gg.TYPE_BYTE)
+  local results = gg.getResults(100000)
+  if #results > 0 then
+    gg.editAll("0", gg.TYPE_BYTE)
+    gg.toast("✅ No Restart đã được bật.")
+  else
+    gg.toast("⚠️ Không tìm thấy giá trị No Restart.")
+  end
+  gg.clearResults()
+end
+
+-- Hàm Speed all
+function ngu()
+  gg.setRanges(gg.REGION_C_ALLOC)
+  gg.searchNumber("-2000000000~-1000000000;2;300~86400;0::13", gg.TYPE_DWORD)
+  gg.refineNumber("3~1000000", gg.TYPE_DWORD)
+  local results = gg.getResults(10000)
+  if #results > 0 then
+    gg.editAll("0", gg.TYPE_DWORD)
+    gg.toast("✅ Đã bật Speed all.")
+  else
+    gg.toast("⚠️ Không tìm thấy giá trị Speed all.")
+  end
+  gg.clearResults()
+end
+
+-- Hàm chỉnh thời gian cụ thể
+function editTime(seconds)
+  gg.setRanges(gg.REGION_C_ALLOC)
+  gg.searchNumber(tostring(seconds), gg.TYPE_DWORD)
+  gg.refineNumber(tostring(seconds), gg.TYPE_DWORD)
+  local results = gg.getResults(10000)
+  if #results > 0 then
+    gg.editAll("0", gg.TYPE_DWORD)
+    gg.toast("✅ Đã chỉnh thời gian: " .. seconds .. " giây")
+  else
+    gg.toast("⚠️ Không tìm thấy giá trị " .. seconds .. " giây.")
+  end
+  gg.clearResults()
+end
+
+-- Main menu chọn đa lựa chọn
+local TimeJump = gg.multiChoice({
+  '👿 No Restart 👿',
+  '🏃‍♂️ Speed all 🏃‍♂️',
+  '🏃‍♂️ 5min 🏃‍♂️',
+  '🏃‍♂️ 15min 🏃‍♂️',
+  '🏃‍♂️ 30min 🏃‍♂️',
+  '🏃‍♂️ 1hour 🏃‍♂️',
+  '🏃‍♂️ 1hour 20min 🏃‍♂️',
+  '🏃‍♂️ 3hour 🏃‍♂️',
+  '🏃‍♂️ 6hour 40min 🏃‍♂️',
+  '🏃‍♂️ 8hour 🏃‍♂️'
+}, nil, "🕓 nó chạy xong thif chờ tầm 20s hãy đánh đánh xong 1 lần thì chờ tầm 5s rồi out game vô lại):")
+
+if TimeJump == nil or next(TimeJump) == nil then
+  gg.toast("❌ Đã hủy thao tác hoặc không chọn gì.")
+  return
+end
+
+for i, selected in pairs(TimeJump) do
+  if selected then
+    if i == 1 then
+      TimeJumpFunc()
+    elseif i == 2 then
+      ngu()
+    elseif i >= 3 then
+      local times = {300, 900, 1800, 3600, 4800, 10800, 24000, 28800}
+      editTime(times[i-2])
+    end
+  end
+end
+
+gg.toast("✅ Đã thực hiện xong các thao tác thời gian.")
 end
 function luyenrank()
 local state = {
