@@ -1,13 +1,13 @@
 function mainMenu()
   local choices = gg.choice({
-    "1. đặt chuồng mọi nơi",
-    "2. ez arena",
-    "3. luyen rank r",
-    "4. ez resuce",
-    "5.hack lv rong",
-    "6.luyện skill",
-    "7.heroicskip",
-    "8. Thoát"
+    "1.⚰️đặt chuồng mọi nơi⚰️",
+    "2.😭ez arena😭",
+    "3.🙏luyen rank r🙏",
+    "4.☠️ez resuce☠️",
+    "5.🐿️hack lv rong🐿️",
+    "6.💀luyện skill💀",
+    "7.😲heroicskip😲",
+    "8.❌Thoát❌"
   }, nil, "=== bố an vĩ đại vcl ===")
 
   if choices == 1 then
@@ -511,10 +511,10 @@ main()
 end
 function luyensk()
   local skillChoice = gg.choice({
-    "1. Luyện Skill 1",
-    "2. Luyện Skill 2",
-    "3. Luyện Skill 3",
-    "4. Luyện Skill 4"
+    "1.💀Luyện Skill 1",
+    "2.☠️Luyện Skill 2",
+    "3.⚰️Luyện Skill 3",
+    "4.🪦Luyện Skill 4"
   }, nil, "Lên web mà tra code rồng")
 
   if skillChoice == 1 then
